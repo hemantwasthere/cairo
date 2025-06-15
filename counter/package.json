@@ -1,0 +1,12 @@
+{
+	"scripts": {
+		"deploy": "tsx scripts/deploy.ts"
+	},
+	"dependencies": {
+		"dotenv": "^16.5.0",
+		"starknet": "^6.24.1"
+	},
+	"devDependencies": {
+		"@types/node": "^24.0.1"
+	}
+}

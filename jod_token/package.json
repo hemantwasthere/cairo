@@ -1,0 +1,20 @@
+{
+  "name": "jod_token",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy:jod": "tsx scripts/deploy_jod.ts",
+    "deploy:points": "tsx scripts/deploy_points.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.0.1"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "starknet": "^6.24.1"
+  }
+}
