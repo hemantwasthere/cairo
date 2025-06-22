@@ -3,10 +3,11 @@
 		"deploy": "tsx scripts/deploy.ts"
 	},
 	"dependencies": {
-		"dotenv": "^16.5.0",
-		"starknet": "^6.24.1",
 		"@openzeppelin/merkle-tree": "^1.0.8",
-		"@scure/starknet": "^1.1.2"
+		"@scure/starknet": "^1.1.2",
+		"dotenv": "^16.5.0",
+		"merkletreejs": "^0.5.2",
+		"starknet": "^6.24.1"
 	},
 	"devDependencies": {
 		"@types/node": "^24.0.1"
