@@ -1,11 +1,7 @@
-import * as starknet from "@scure/starknet";
+import { assert } from "console";
+import { Contract, num, RpcProvider } from "starknet";
 
-function pedersenHex(a: string, b: string): string {
-  const hash = starknet.pedersen(a, b);
-  let hex = BigInt(hash).toString(16);
-  hex = hex.padStart(64, "0");
-  return "0x" + hex;
-}
+import { MerkleTree as MerkleTreeSNF } from "./lib";
 
 const values = [
   [
@@ -15,49 +11,53 @@ const values = [
   ["0x2222222222222222222222222222222222222222", "2500000000000000000"],
 ];
 
-const leaves = values.map((v) => pedersenHex(v[0], v[1]));
+const tree4 = new MerkleTreeSNF(
+  values.map((x) => ({
+    address: BigInt(num.getDecimalString(x[0].toString())),
+    cumulative_amount: BigInt(num.getDecimalString(x[1].toString())),
+  }))
+);
+const root = num.getHexString(tree4.root.value.toString());
+console.log("Merkle Tree 4 Root:", root);
+const proof = getProof(0); // for the first value
+console.log("Merkle Proof for first leaf in Tree 4:", proof);
 
-function buildMerkleTree(leaves: string[]): string[][] {
-  let level = leaves;
-  const tree = [level];
-  while (level.length > 1) {
-    const nextLevel: string[] = [];
-    for (let i = 0; i < level.length; i += 2) {
-      if (i + 1 < level.length) {
-        nextLevel.push(pedersenHex(level[i], level[i + 1]));
-      } else {
-        // if odd, duplicate last
-        nextLevel.push(level[i]);
-      }
-    }
-    tree.push(nextLevel);
-    level = nextLevel;
-  }
-  return tree;
+function getProof(leafIndex: number): string[] {
+  return tree4.address_calldata(
+    BigInt(num.getDecimalString(values[leafIndex][0].toString()))
+  ).proof;
 }
 
-const tree = buildMerkleTree(leaves);
-const root = tree[tree.length - 1][0];
-console.log("Merkle Root:", root);
+async function checkProofValidity(
+  user: string,
+  amount: string,
+  proof: string[],
+  myRoot: string
+) {
+  const addr =
+    "0x232a79c2b164fd81c8da6b52c536d5004d6428e1fbbee44f43f784ca0ea64ff";
+  const provider = new RpcProvider({
+    nodeUrl: "https://starknet-sepolia.public.blastapi.io",
+  });
+  const cls = await provider.getClassAt(addr);
+  const contract = new Contract(cls.abi, addr, provider);
 
-function getProof(tree: string[][], leafIndex: number): string[] {
-  let proof: string[] = [];
-  let index = leafIndex;
-  for (let level = 0; level < tree.length - 1; level++) {
-    const levelNodes = tree[level];
-    const isRightNode = index % 2;
-    const pairIndex = isRightNode ? index - 1 : index + 1;
-    if (pairIndex < levelNodes.length) {
-      proof.push(levelNodes[pairIndex]);
-    }
-    index = Math.floor(index / 2);
-  }
-  return proof;
+  // returns root as expected by the contract
+  const computedRoot: any = await contract.call("get_root_for", [
+    user,
+    amount,
+    proof,
+  ]);
+  console.log("Computed Root:", num.getHexString(computedRoot));
+  assert(
+    num.getHexString(computedRoot) === myRoot,
+    "Computed root does not match expected root"
+  );
+  console.log("Proof is valid for user:", user, "with amount:", amount);
 }
 
-const leafIndex = 0; // for the first value
-const proof = getProof(tree, leafIndex);
-console.log("Proof for leaf 0:", proof);
+async function main() {
+  await checkProofValidity(values[0][0], values[0][1], proof, root);
+}
 
-const proof2 = getProof(tree, 1); // for the second value
-console.log("Proof for leaf 2:", proof2);
+main();
